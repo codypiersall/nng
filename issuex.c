@@ -54,32 +54,24 @@ void init_cb_data(struct cb_data *data, int num_iter) {
 
 int main(int argc, char *argv[]) {
     nng_socket listener, dialer;
-    int num_iter = NUM_ITER;
-    char *addr = ADDR;
-    if (argc >= 3) {
-        num_iter = strtol(argv[2], NULL, 0);
-    }
-    if (argc >= 2) {
-        addr = argv[1];
-    }
     struct cb_data listener_cb_data, dialer_cb_data;
-    init_cb_data(&listener_cb_data, num_iter);
-    init_cb_data(&dialer_cb_data, num_iter);
+    init_cb_data(&listener_cb_data, NUM_ITER);
+    init_cb_data(&dialer_cb_data, NUM_ITER);
 
     CHECK(nng_pair0_open(&listener));
-    CHECK(nng_listen(listener, addr, NULL, 0));
+    CHECK(nng_listen(listener, ADDR, NULL, 0));
 
-    for (int j = 0; j < num_iter; j++) {
+    for (int j = 0; j < NUM_ITER; j++) {
         CHECK(nng_pair_open(&dialer));
         CHECK(nng_pipe_notify(dialer, NNG_PIPE_EV_ADD_PRE, cb, &dialer_cb_data));
         CHECK(nng_pipe_notify(dialer, NNG_PIPE_EV_ADD_POST, cb, &dialer_cb_data));
         CHECK(nng_pipe_notify(dialer, NNG_PIPE_EV_REM_POST, cb, &dialer_cb_data));
-        CHECK(nng_dial(dialer, addr, NULL, NNG_FLAG_NONBLOCK));
+        CHECK(nng_dial(dialer, ADDR, NULL, NNG_FLAG_NONBLOCK));
         usleep(100);
         CHECK(nng_close(dialer));
     }
 
-    for (int j = 0; j < num_iter * 3; j++) {
+    for (int j = 0; j < NUM_ITER * 3; j++) {
         struct seen_events *e = &dialer_cb_data.events[j];
         fprintf(stdout, "%d %d\n", e->pipe_id, e->event);
     }
